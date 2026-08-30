@@ -20,6 +20,7 @@ from ._helpers import (
     _get_manager,
     _get_setup_client,
     _register_oauth_state,
+    _resolve_country,
     _validate_oauth_state,
     async_load_cached_institutions,
     async_save_cached_institutions,
@@ -107,14 +108,14 @@ class FinanceDashboardSetupUsersView(HomeAssistantView):
 
 
 class FinanceDashboardSetupInstitutionsView(HomeAssistantView):
-    """List available banking institutions for DE."""
+    """List available banking institutions for the configured country."""
 
     url = f"/api/{DOMAIN}/setup/institutions"
     name = f"api:{DOMAIN}:setup_institutions"
     requires_auth = True
 
     async def get(self, request: web.Request) -> web.Response:
-        """Fetch the DE bank list.
+        """Fetch the bank list for the configured country.
 
         The ``/aspsps`` catalog is served by Enable Banking itself, not by a
         bank, so it neither spends nor is bound by the 4/day per-ASPSP quota.
@@ -130,11 +131,14 @@ class FinanceDashboardSetupInstitutionsView(HomeAssistantView):
         on non-200 responses, swallowing the JSON body.
         """
         hass = request.app["hass"]
+        country = _resolve_country(hass)
 
-        cached, cached_at = await async_load_cached_institutions(hass)
+        cached, cached_at = await async_load_cached_institutions(hass, country)
         if cached and _cache_is_fresh(cached_at):
-            _LOGGER.debug("Serving %d institutions from fresh cache", len(cached))
-            return self.json({"institutions": cached})
+            _LOGGER.debug(
+                "Serving %d institutions for %s from fresh cache", len(cached), country
+            )
+            return self.json({"institutions": cached, "country": country})
 
         def _fallback(error_msg: str, error_type: str) -> web.Response:
             """Prefer a stale catalog over an error the user cannot act on."""
@@ -144,22 +148,28 @@ class FinanceDashboardSetupInstitutionsView(HomeAssistantView):
                     error_type,
                     len(cached),
                 )
-                return self.json({"institutions": cached, "cached_at": cached_at})
-            return self.json({"error": error_msg, "error_type": error_type})
+                return self.json(
+                    {"institutions": cached, "cached_at": cached_at, "country": country}
+                )
+            return self.json({"error": error_msg, "error_type": error_type, "country": country})
 
         try:
             from ..enablebanking_client import RateLimitExceeded
 
             client = await _get_setup_client(hass, enforce_rate_limit=False)
-            institutions = await client.async_get_institutions("DE")
+            institutions = await client.async_get_institutions(country)
             _LOGGER.debug(
-                "Fetched %d institutions from Enable Banking",
+                "Fetched %d institutions for %s from Enable Banking",
                 len(institutions),
+                country,
             )
             if not institutions:
-                return _fallback("Enable Banking returned an empty bank list", "api_error")
-            await async_save_cached_institutions(hass, institutions)
-            return self.json({"institutions": institutions})
+                return _fallback(
+                    f"Enable Banking returned an empty bank list for country {country}",
+                    "api_error",
+                )
+            await async_save_cached_institutions(hass, institutions, country)
+            return self.json({"institutions": institutions, "country": country})
 
         except RateLimitExceeded as exc:
             return _fallback(str(exc), "rate_limited")
@@ -203,6 +213,11 @@ class FinanceDashboardSetupAuthorizeView(HomeAssistantView):
         institution_name = body.get("institution_name", "")
         if not institution_name:
             return self.json({"error": "institution_name required"})
+
+        # The catalog entry carries the country it was listed under; fall back
+        # to the configured one when the frontend does not send it.
+        institution_country = str(body.get("institution_country") or "").upper()
+        country = institution_country or _resolve_country(hass)
 
         try:
             client = await _get_setup_client(hass)
@@ -254,7 +269,7 @@ class FinanceDashboardSetupAuthorizeView(HomeAssistantView):
                     "async_create_auth",
                     client=client,
                     aspsp_name=institution_name,
-                    aspsp_country="DE",
+                    aspsp_country=country,
                     redirect_url=callback_url,
                     valid_until=valid_until,
                     state=state,
@@ -262,7 +277,7 @@ class FinanceDashboardSetupAuthorizeView(HomeAssistantView):
             else:
                 auth_data = await client.async_create_auth(
                     aspsp_name=institution_name,
-                    aspsp_country="DE",
+                    aspsp_country=country,
                     redirect_url=callback_url,
                     valid_until=valid_until,
                     state=state,

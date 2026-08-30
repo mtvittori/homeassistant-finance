@@ -26,6 +26,7 @@
       "init": {
         "title": "Finance Einstellungen",
         "data": {
+          "country": "Land der Bank (ISO 3166-1 alpha-2, z. B. DE, IT)",
           "refresh_interval_minutes": "Aktualisierungsintervall (Minuten)",
           "split_model": "Budget-Aufteilungsmodell",
           "currency": "Währung",

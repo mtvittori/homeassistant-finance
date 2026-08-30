@@ -198,11 +198,36 @@ async def _get_setup_client(hass: HomeAssistant, *, enforce_rate_limit: bool = T
 
 
 # ---------------------------------------------------------------------------
+# ASPSP country
+# ---------------------------------------------------------------------------
+
+
+def _resolve_country(hass: HomeAssistant) -> str:
+    """Return the ISO 3166-1 alpha-2 country to query ASPSPs for.
+
+    Order: integration option -> config-entry data -> ``hass.config.country``
+    -> ``DEFAULT_COUNTRY``.  Enable Banking scopes both ``/aspsps`` and
+    ``/auth`` by country, and a country with no ASPSPs comes back as an empty
+    list rather than an error, so a hardcoded code silently hides every bank
+    outside it.
+    """
+    from ..const import CONF_COUNTRY, DEFAULT_COUNTRY
+
+    entry = hass.data.get(DOMAIN, {}).get("entry")
+    if entry is not None:
+        country = entry.options.get(CONF_COUNTRY) or entry.data.get(CONF_COUNTRY)
+        if country:
+            return str(country).upper()
+    return str(hass.config.country or DEFAULT_COUNTRY).upper()
+
+
+# ---------------------------------------------------------------------------
 # Institution catalog cache
 # ---------------------------------------------------------------------------
-# The DE bank list changes rarely but the wizard is useless without it.
+# The bank list changes rarely but the wizard is useless without it.
 # Persisting it means an Enable Banking outage degrades the wizard to a
-# stale list instead of an empty one.
+# stale list instead of an empty one.  The cache is country-scoped: a catalog
+# fetched for another country must never be served after the option changes.
 
 
 def _institution_store(hass: HomeAssistant):
@@ -219,8 +244,16 @@ def _institution_store(hass: HomeAssistant):
     return store
 
 
-async def async_load_cached_institutions(hass: HomeAssistant) -> tuple[list, str | None]:
+async def async_load_cached_institutions(
+    hass: HomeAssistant, country: str | None = None
+) -> tuple[list, str | None]:
     """Load the cached catalog.
+
+    Args:
+        country: When given, a cache written for a different country is
+            discarded.  A cache written before this key existed has no
+            country and is accepted, so an upgrade does not throw the
+            existing catalog away.
 
     Returns:
         ``(institutions, cached_at_iso)``.  Empty list + None when no usable
@@ -237,10 +270,20 @@ async def async_load_cached_institutions(hass: HomeAssistant) -> tuple[list, str
     institutions = data.get("institutions") or []
     if not isinstance(institutions, list) or not institutions:
         return [], None
+    cached_country = data.get("country")
+    if country and cached_country and cached_country != country.upper():
+        _LOGGER.debug(
+            "Institution cache is for %s, need %s — ignoring it",
+            cached_country,
+            country.upper(),
+        )
+        return [], None
     return institutions, data.get("cached_at")
 
 
-async def async_save_cached_institutions(hass: HomeAssistant, institutions: list) -> None:
+async def async_save_cached_institutions(
+    hass: HomeAssistant, institutions: list, country: str | None = None
+) -> None:
     """Persist a freshly fetched catalog. Never raises."""
     if not institutions:
         return
@@ -249,6 +292,7 @@ async def async_save_cached_institutions(hass: HomeAssistant, institutions: list
             {
                 "institutions": institutions,
                 "cached_at": datetime.now(UTC).isoformat(),
+                "country": country.upper() if country else None,
             }
         )
     except Exception:

@@ -36,6 +36,12 @@ STORAGE_VERSION = 1
 ENABLEBANKING_BASE_URL = "https://api.enablebanking.com"
 # Sandbox uses a different app registration
 ENABLEBANKING_SANDBOX_URL = "https://api.enablebanking.com"
+# ASPSP country. The bank catalog (/aspsps) and the authorization request
+# are both country-scoped, so a wrong code yields an empty bank list rather
+# than an error. Resolution order: integration option -> hass.config.country
+# -> DEFAULT_COUNTRY.
+CONF_COUNTRY = "country"
+DEFAULT_COUNTRY = "DE"
 TOKEN_MAX_AGE_DAYS = 90  # Force re-auth after 90 days (our own policy)
 SESSION_MAX_DAYS = 180  # Enable Banking session validity
 SESSION_TIMEOUT_MINUTES = 30

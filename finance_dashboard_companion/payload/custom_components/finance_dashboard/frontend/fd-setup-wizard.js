@@ -31,6 +31,7 @@ class FdSetupWizard extends HTMLElement {
     this._hass = null;
     this._step = 1; // 1=institutions, 2=authorize, 3=accounts, 4=done
     this._institutions = [];
+    this._country = null;
     this._filteredInstitutions = [];
     this._selectedInstitution = null;
     this._authUrl = null;
@@ -126,6 +127,7 @@ class FdSetupWizard extends HTMLElement {
     this._loading = true;
     this._error = null;
     this._cachedAt = null;
+    this._country = null;
     this._renderContent();
     try {
       const result = await this._hass.callApi("GET", endpoint);
@@ -135,7 +137,9 @@ class FdSetupWizard extends HTMLElement {
         this._institutions = (result && result.institutions) || [];
         this._filteredInstitutions = this._institutions;
         this._cachedAt = (result && result.cached_at) || null;
-        // An empty list is a failure, not a valid state — DE always has banks.
+        this._country = (result && result.country) || null;
+        // An empty list is a failure, not a valid state — every country the
+        // backend is configured for has at least one ASPSP.
         if (!this._institutions.length) {
           this._error = window._fd.tSync("wizard.error.api_error");
         }
@@ -203,6 +207,7 @@ class FdSetupWizard extends HTMLElement {
         institution_name: institution.name,
         institution_id: institution.id || "",
         institution_logo: institution.logo || "",
+        institution_country: institution.country || this._country || "",
       });
       if (result.error) {
         this._error = result.error;
@@ -727,6 +732,7 @@ class FdSetupWizard extends HTMLElement {
         data-idx="${idx}"
         data-name="${this._esc(inst.name)}"
         data-id="${this._esc(inst.id || "")}"
+        data-country="${this._esc((inst.countries && inst.countries[0]) || this._country || "")}"
         data-logo="${this._esc(inst.logo || "")}">
         ${inst.logo ? `<img src="${this._esc(inst.logo)}" alt="">` : `<div style="width:32px;height:32px;border-radius:6px;background:#333;"></div>`}
         <span class="name">${this._esc(inst.name)}</span>
@@ -743,6 +749,7 @@ class FdSetupWizard extends HTMLElement {
         this._authorize({
           name: el.dataset.name,
           id: el.dataset.id,
+          country: el.dataset.country,
           logo: el.dataset.logo,
         });
       });
@@ -752,6 +759,7 @@ class FdSetupWizard extends HTMLElement {
           this._authorize({
             name: el.dataset.name,
             id: el.dataset.id,
+            country: el.dataset.country,
             logo: el.dataset.logo,
           });
         } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {

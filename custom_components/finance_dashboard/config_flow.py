@@ -26,8 +26,10 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    CONF_COUNTRY,
     DEFAULT_AUTO_REFRESH_MAX_AGE_MINUTES,
     DEFAULT_AUTO_REFRESH_ON_OPEN,
+    DEFAULT_COUNTRY,
     DOMAIN,
     OPT_AUTO_REFRESH_MAX_AGE_MINUTES,
     OPT_AUTO_REFRESH_ON_OPEN,
@@ -114,8 +116,9 @@ class FinanceDashboardConfigFlow(ConfigFlow, domain=DOMAIN):
                     _LOGGER.exception("Unexpected error loading credentials")
                     errors["base"] = "invalid_key_format"
                 else:
+                    country = str(self.hass.config.country or DEFAULT_COUNTRY).upper()
                     try:
-                        institutions = await client.async_get_institutions("DE")
+                        institutions = await client.async_get_institutions(country)
                     except aiohttp.ClientResponseError as exc:
                         _LOGGER.error(
                             "Enable Banking API rejected request: HTTP %s — %s",
@@ -166,7 +169,7 @@ class FinanceDashboardConfigFlow(ConfigFlow, domain=DOMAIN):
                             )
                             return self.async_create_entry(
                                 title="Finance",
-                                data={"configured": False},
+                                data={"configured": False, CONF_COUNTRY: country},
                             )
 
         return self.async_show_form(
@@ -213,12 +216,25 @@ class FinanceDashboardOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
+            country = user_input.get(CONF_COUNTRY)
+            if country:
+                user_input[CONF_COUNTRY] = str(country).strip().upper()
             return self.async_create_entry(title="", data=user_input)
+
+        current_country = (
+            self.config_entry.options.get(CONF_COUNTRY)
+            or self.config_entry.data.get(CONF_COUNTRY)
+            or str(self.hass.config.country or DEFAULT_COUNTRY).upper()
+        )
 
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
+                    vol.Optional(
+                        CONF_COUNTRY,
+                        default=current_country,
+                    ): vol.All(str, vol.Length(min=2, max=2)),
                     vol.Optional(
                         "refresh_interval_minutes",
                         default=self.config_entry.options.get("refresh_interval_minutes", 60),
