@@ -174,8 +174,8 @@ tbody tr + tr td { border-top: 1px solid var(--bd); }
   <div class="card-h">${tSync("budget.title")}</div>
   <div class="empty">
     ${tSync("budget.empty")}
-    <code>Entwicklerwerkzeuge → Aktionen → Finance: Import Household Spreadsheet
-path: /config/Kalkulation Haushalt.xlsx</code>
+    <code>${tSync("budget.import_hint")}
+path: /config/&lt;file&gt;.xlsx</code>
     ${tSync("budget.empty_hint")}
   </div>
 </div>`;

@@ -34,8 +34,10 @@ class FdPersonCard extends HTMLElement {
       style: "currency", currency: "EUR",
     }).format(v || 0);
 
-    const splitLabel = this._splitModel === "proportional" ? "Proportional"
-      : this._splitModel === "equal" ? "Gleich" : "Benutzerdefiniert";
+    const splitLabel = window._fd.tSync(
+      this._splitModel === "proportional" ? "split.proportional"
+      : this._splitModel === "equal" ? "split.equal" : "split.custom"
+    );
 
     const spielgeldClass = m.spielgeld >= 0 ? "pos" : "neg";
     const bonusRow = m.bonus_amount > 0

@@ -178,5 +178,16 @@
   "budget.benchmark.title": "Confronto Germania",
   "card.no_account": "Nessun conto collegato.",
   "card.description": "Saldo e movimenti a colpo d'occhio.",
-  "card.setup_required": "Configurazione necessaria."
+  "card.setup_required": "Configurazione necessaria.",
+  "budget_config.split_model": "Modello di ripartizione",
+  "budget_config.equal": "Uguale (50/50)",
+  "budget_config.custom": "Personalizzato (manuale)",
+  "budget_config.remainder": "Gestione del residuo",
+  "budget_config.remainder_none": "Nessuna ripartizione",
+  "budget_config.remainder_equal": "Ripartizione uguale",
+  "budget_config.loading": "Caricamento …",
+  "split.proportional": "Proporzionale",
+  "split.equal": "Uguale",
+  "split.custom": "Personalizzato",
+  "budget.import_hint": "Strumenti per sviluppatori → Azioni → Finance: Import Household Spreadsheet"
 }

@@ -178,5 +178,16 @@
   "budget.benchmark.title": "Vergleich Deutschland",
   "card.no_account": "Kein Konto verknüpft.",
   "card.description": "Kontostand und Transaktionen auf einen Blick.",
-  "card.setup_required": "Einrichtung erforderlich."
+  "card.setup_required": "Einrichtung erforderlich.",
+  "budget_config.split_model": "Split-Modell",
+  "budget_config.equal": "Gleich (50/50)",
+  "budget_config.custom": "Benutzerdefiniert (manuell)",
+  "budget_config.remainder": "Restgeld-Modus",
+  "budget_config.remainder_none": "Kein Split",
+  "budget_config.remainder_equal": "Gleichverteilung",
+  "budget_config.loading": "Lade …",
+  "split.proportional": "Proportional",
+  "split.equal": "Gleich",
+  "split.custom": "Benutzerdefiniert",
+  "budget.import_hint": "Entwicklerwerkzeuge → Aktionen → Finance: Import Household Spreadsheet"
 }

@@ -77,6 +77,11 @@ MESSAGES: dict[str, dict[str, str]] = {
             "scheda e tornare a Finance."
         ),
     },
+    "ratelimit.until": {
+        "de": "API rate-limited bis {until} — bitte morgen erneut versuchen.",
+        "en": "API rate-limited until {until} — please try again tomorrow.",
+        "it": "API in limite di richieste fino alle {until} — riprova domani.",
+    },
     "refresh.no_credentials": {
         "de": "Keine Enable-Banking-Credentials hinterlegt",
         "en": "No Enable Banking credentials stored",

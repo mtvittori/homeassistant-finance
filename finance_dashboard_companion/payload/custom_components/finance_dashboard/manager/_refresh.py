@@ -680,8 +680,11 @@ class RefreshMixin:
 
         if self.rate_limited_until:
             raise RateLimitExceeded(
-                f"API rate-limited until {self._rate_limited_until.isoformat()} "
-                "— bitte morgen erneut versuchen."
+                msg(
+                    self.hass,
+                    "ratelimit.until",
+                    until=self._rate_limited_until.isoformat(),
+                )
             )
 
         if client is None:

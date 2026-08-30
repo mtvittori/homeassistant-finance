@@ -13,6 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from ..const import DOMAIN
+from ..messages import msg
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -172,8 +173,7 @@ async def _get_setup_client(hass: HomeAssistant, *, enforce_rate_limit: bool = T
                 now = datetime.now(UTC)
                 if rl_dt > now:
                     raise RateLimitExceeded(
-                        f"API rate-limited until {rl_dt.isoformat()} "
-                        "— bitte morgen erneut versuchen."
+                        msg(hass, "ratelimit.until", until=rl_dt.isoformat())
                     )
             except (ValueError, TypeError):
                 # Corrupt timestamp — clear it and proceed

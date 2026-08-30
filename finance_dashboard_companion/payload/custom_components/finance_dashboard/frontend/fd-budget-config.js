@@ -51,25 +51,25 @@ class FdBudgetConfig extends HTMLElement {
 </style>
 <div class="bcc" id="bcc">
   <div class="bcc-row">
-    <span class="bcc-label">Split-Modell</span>
+    <span class="bcc-label">${tSync("budget_config.split_model")}</span>
     <select class="bcc-select" id="splitMode">
-      <option value="equal">Equal (50/50)</option>
+      <option value="equal">${tSync("budget_config.equal")}</option>
       <option value="proportional">${tSync("budget_config.proportional")}</option>
-      <option value="custom">Custom (manuell)</option>
+      <option value="custom">${tSync("budget_config.custom")}</option>
     </select>
   </div>
   <div class="bcc-row">
-    <span class="bcc-label">Restgeld-Modus</span>
+    <span class="bcc-label">${tSync("budget_config.remainder")}</span>
     <select class="bcc-select" id="remainderMode">
-      <option value="none">Kein Split</option>
-      <option value="equal_split">Gleichverteilung</option>
+      <option value="none">${tSync("budget_config.remainder_none")}</option>
+      <option value="equal_split">${tSync("budget_config.remainder_equal")}</option>
     </select>
   </div>
   <div class="bcc-section">
     <h4>${tSync("budget_config.preview")}</h4>
     <div class="bcc-preview" id="preview">
       <div style="color:var(--secondary-text-color);font-size:13px;text-align:center">
-        Lade...
+        ${tSync("budget_config.loading")}
       </div>
     </div>
   </div>
@@ -130,5 +130,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "fd-budget-config",
   name: "Finance — Budget Config",
-  description: "Configure household budget split model and preview Spielgeld.",
+  description: "Configure the household budget split model and preview each person's pocket money.",
 });

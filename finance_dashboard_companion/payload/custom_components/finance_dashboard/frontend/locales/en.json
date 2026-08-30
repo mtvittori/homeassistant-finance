@@ -178,5 +178,16 @@
   "budget.benchmark.title": "Comparison Germany",
   "card.no_account": "No account linked.",
   "card.description": "Balance and transactions at a glance.",
-  "card.setup_required": "Setup required."
+  "card.setup_required": "Setup required.",
+  "budget_config.split_model": "Split model",
+  "budget_config.equal": "Equal (50/50)",
+  "budget_config.custom": "Custom (manual)",
+  "budget_config.remainder": "Remainder mode",
+  "budget_config.remainder_none": "No split",
+  "budget_config.remainder_equal": "Split equally",
+  "budget_config.loading": "Loading …",
+  "split.proportional": "Proportional",
+  "split.equal": "Equal",
+  "split.custom": "Custom",
+  "budget.import_hint": "Developer tools → Actions → Finance: Import Household Spreadsheet"
 }
