@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from ha_customapps.panel import PanelRegistrar
 from homeassistant.core import HomeAssistant
@@ -11,9 +12,9 @@ from .const import (
     DOMAIN,
     PANEL_COMPONENT_NAME,
     PANEL_ICON,
-    PANEL_MODULE_PATH,
     PANEL_TITLE,
     PANEL_URL_PATH,
+    VERSION,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -40,6 +41,25 @@ LOVELACE_COMPONENTS = [
 ]
 
 
+def _asset_stamp(frontend_dir: str) -> str:
+    """Return a cache key that changes whenever a panel asset changes.
+
+    The assets are served with a long cache lifetime, so a plain URL keeps
+    the browser on the old bundle after an update — for as long as the cache
+    entry lives.  The newest mtime in the frontend directory is enough to
+    make every URL unique per build, including local edits that do not bump
+    VERSION.  Called from the executor: it touches the filesystem.
+    """
+    try:
+        newest = max(
+            (p.stat().st_mtime_ns for p in Path(frontend_dir).glob("*.js")),
+            default=0,
+        )
+    except OSError:
+        return VERSION
+    return f"{VERSION}-{newest // 1_000_000_000}"
+
+
 async def async_register_panel(hass: HomeAssistant) -> None:
     """Register the Finance sidebar panel.
 
@@ -50,6 +70,9 @@ async def async_register_panel(hass: HomeAssistant) -> None:
     ``ValueError: Overwriting panel``.
     """
     await async_unregister_panel(hass)
+    frontend_dir = hass.config.path("custom_components", DOMAIN, "frontend")
+    stamp = await hass.async_add_executor_job(_asset_stamp, frontend_dir)
+    lovelace_urls = [f"{url}?v={stamp}" for url in LOVELACE_COMPONENTS]
     try:
         registrar = PanelRegistrar(
             hass=hass,
@@ -58,9 +81,9 @@ async def async_register_panel(hass: HomeAssistant) -> None:
             panel_title=PANEL_TITLE,
             panel_icon=PANEL_ICON,
             panel_url_path=PANEL_URL_PATH,
-            module_url=PANEL_MODULE_PATH,
-            frontend_dir=hass.config.path("custom_components", DOMAIN, "frontend"),
-            lovelace_urls=LOVELACE_COMPONENTS,
+            module_url=f"{STATIC_BASE}/finance-dashboard-panel.js?v={stamp}",
+            frontend_dir=frontend_dir,
+            lovelace_urls=lovelace_urls,
         )
         await registrar.async_register()
         _LOGGER.debug("Finance panel registered at /%s", PANEL_URL_PATH)
