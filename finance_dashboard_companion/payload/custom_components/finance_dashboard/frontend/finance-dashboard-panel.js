@@ -22,6 +22,9 @@
  * See docs/ARCHITECTURE-FRONTEND.md for full architecture documentation.
  */
 
+// API base path — see fd-setup-wizard.js for why this is not a bare global.
+const _fdPanelDomain = () => (window._fd && window._fd.DOMAIN) || "finance_dashboard";
+
 class FinanceDashboardPanel extends HTMLElement {
   constructor() {
     super();
@@ -73,7 +76,7 @@ class FinanceDashboardPanel extends HTMLElement {
   async _maybeAutoRefresh() {
     if (!this._hass) return;
     try {
-      const status = await this._hass.callApi("GET", `${DOMAIN}/refresh_status`);
+      const status = await this._hass.callApi("GET", `${_fdPanelDomain()}/refresh_status`);
       if (!status || status.auto_refresh_on_open === false) return;
       if (status.demo_mode || status.is_refreshing) return;
       if (!status.account_count) return;
