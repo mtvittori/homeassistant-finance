@@ -18,6 +18,8 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.util import dt as dt_util
 
+from ..messages import msg
+
 if TYPE_CHECKING:
     pass
 
@@ -188,7 +190,7 @@ class RefreshMixin:
                 accounts=0,
                 transactions=len(self._transactions),
                 new=0,
-                errors=["Tageslimit der Bank-API erreicht (4/Tag pro Konto)"],
+                errors=[msg(self.hass, "refresh.rate_limited")],
             )
             return self._transactions
 
@@ -519,7 +521,13 @@ class RefreshMixin:
                 if _rle.retry_after_seconds is not None:
                     retry_after_dt = dt_util.now() + timedelta(seconds=_rle.retry_after_seconds)
                 self._set_rate_limited(retry_after_dt, attended=bool(psu_ip))
-                errors.append(f"Rate-Limit beim Saldo für {account.get('name', account_id)}")
+                errors.append(
+                    msg(
+                        self.hass,
+                        "refresh.rate_limited_balance",
+                        account=account.get("name", account_id),
+                    )
+                )
                 # Preserve the partial batch we already fetched — without
                 # this, accounts that succeeded BEFORE the 429 would lose
                 # their fresh balance and the UI would show stale numbers

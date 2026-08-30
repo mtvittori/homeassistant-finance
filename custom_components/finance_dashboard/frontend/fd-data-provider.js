@@ -189,7 +189,7 @@ class FdDataProvider extends HTMLElement {
     } catch (e) {
       console.error("fd-data-provider: demo data fetch failed:", e);
       this.dispatchEvent(new CustomEvent("fd-data-updated", {
-        detail: { error: "Demo-Daten konnten nicht geladen werden", demoMode: true },
+        detail: { error: window._fd.tSync("provider.demo_failed"), demoMode: true },
         bubbles: true,
         composed: true,
       }));

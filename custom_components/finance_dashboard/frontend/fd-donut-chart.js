@@ -24,7 +24,7 @@ class FdDonutChart extends HTMLElement {
       return;
     }
 
-    const { SHARED_CSS, escHtml } = window._fd;
+    const { SHARED_CSS, escHtml, tSync } = window._fd;
 
     const { categories = {}, totalExpenses = 0 } = this._data;
     const catColors = this._data.catColors || {};
@@ -66,11 +66,11 @@ class FdDonutChart extends HTMLElement {
 
     // Build aria-label from sorted categories
     const ariaLabel = sorted.length
-      ? "Kategorie-Verteilung: " + sorted.map(([cat, amt]) => {
+      ? tSync("donut.aria_prefix") + sorted.map(([cat, amt]) => {
           const p = totalExpenses > 0 ? Math.round(Math.abs(amt) / totalExpenses * 100) : 0;
           return `${escHtml(catLabels[cat] || cat)} ${p}%`;
         }).join(", ")
-      : "Keine Ausgaben";
+      : tSync("cost.empty");
 
     // Visually-hidden table for screen-readers
     const tableRows = sorted.map(([cat, amt]) => {
@@ -133,15 +133,15 @@ class FdDonutChart extends HTMLElement {
     <svg viewBox="0 0 100 100" role="img" aria-label="${ariaLabel}">${donutSvg}</svg>
     <div class="donut-c" aria-hidden="true">
       <div class="v">${eur(totalExpenses)}</div>
-      <div class="l">Gesamt</div>
+      <div class="l">${tSync("donut.total")}</div>
     </div>
   </div>
-  <ul class="cat-list">${catList || `<li style="color:var(--tx2);font-size:13px">Keine Ausgaben</li>`}</ul>
+  <ul class="cat-list">${catList || `<li style="color:var(--tx2);font-size:13px">${tSync("cost.empty")}</li>`}</ul>
 </div>
-<table class="visually-hidden" aria-label="Kategorie-Verteilung Tabelle">
-  <caption>Ausgaben nach Kategorie</caption>
-  <thead><tr><th>Kategorie</th><th>Betrag</th><th>Anteil</th></tr></thead>
-  <tbody>${tableRows || "<tr><td colspan='3'>Keine Ausgaben</td></tr>"}</tbody>
+<table class="visually-hidden" aria-label="${tSync("donut.table_label")}">
+  <caption>${tSync("category.section.title")}</caption>
+  <thead><tr><th>${tSync("cost.col_category")}</th><th>${tSync("cost.col_amount")}</th><th>${tSync("cost.col_share")}</th></tr></thead>
+  <tbody>${tableRows || `<tr><td colspan='3'>${tSync("cost.empty")}</td></tr>`}</tbody>
 </table>`;
   }
 }

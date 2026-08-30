@@ -15,6 +15,7 @@ from aiohttp import web
 from homeassistant.components.http import HomeAssistantView
 
 from ..const import DOMAIN, SESSION_MAX_DAYS
+from ..messages import msg
 from ._helpers import (
     _cache_is_fresh,
     _get_manager,
@@ -240,12 +241,8 @@ class FinanceDashboardSetupAuthorizeView(HomeAssistantView):
             if request.scheme != "https":
                 return self.json(
                     {
-                        "error": (
-                            "Bank-Autorisierung erfordert HTTPS. Aktuelle "
-                            f"Callback-URL '{callback_url}' ist HTTP — "
-                            "öffne das Finance-Panel über die HTTPS-URL "
-                            "deiner HA-Instanz (z. B. Nabu Casa) oder "
-                            "richte ein TLS-Zertifikat ein."
+                        "error": msg(
+                            hass, "auth.https_required", callback_url=callback_url
                         ),
                         "error_type": "callback_not_https",
                         "callback_url": callback_url,
@@ -335,10 +332,8 @@ class FinanceDashboardSetupAuthorizeView(HomeAssistantView):
                 pass
 
             if "redirect" in exc_msg.lower():
-                error_detail = (
-                    f"Redirect URL nicht registriert — die Callback-URL "
-                    f"'{callback_url}' ist nicht bei Enable Banking "
-                    f"hinterlegt."
+                error_detail = msg(
+                    hass, "auth.redirect_not_registered", callback_url=callback_url
                 )
             return self.json({"error": error_detail})
 
@@ -551,7 +546,7 @@ class FinanceDashboardSetupCompleteView(HomeAssistantView):
                 _LOGGER.warning("Setup completion blocked by Enable-Banking rate limit")
                 return self.json(
                     {
-                        "error": "Bank-API tageslimit erreicht — bitte morgen erneut versuchen",
+                        "error": msg(hass, "setup.rate_limited"),
                         "error_type": "rate_limited",
                     }
                 )
@@ -667,8 +662,8 @@ class FinanceDashboardOAuthCallbackView(HomeAssistantView):
                     session_data = await client.async_create_session(code)
                     accounts = session_data.get("accounts", [])
                     if not accounts:
-                        hass.data[DOMAIN]["pending_setup_error"] = (
-                            "Bank hat keine Konten zurückgegeben. Bitte Bankvertrag/Konsent prüfen."
+                        hass.data[DOMAIN]["pending_setup_error"] = msg(
+                            hass, "callback.no_accounts"
                         )
                     else:
                         hass.data[DOMAIN]["pending_accounts"] = accounts
@@ -713,9 +708,8 @@ p { color: #9898a8; font-size: 14px; line-height: 1.6; }
 </style></head><body>
 <div class="card">
   <div class="icon">&#9989;</div>
-  <h1>Bankverbindung erfolgreich</h1>
-  <p>Dein Bankkonto wurde autorisiert.<br>
-  Du kannst diesen Tab schlie&szlig;en und zum Finance zur&uuml;ckkehren.</p>
+  <h1>""" + msg(hass, "callback.title") + """</h1>
+  <p>""" + msg(hass, "callback.body") + """</p>
 </div>
 </body></html>"""
 

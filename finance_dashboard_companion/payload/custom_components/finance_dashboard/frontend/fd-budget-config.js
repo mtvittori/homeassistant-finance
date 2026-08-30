@@ -26,8 +26,9 @@ class FdBudgetConfig extends HTMLElement {
   }
 
   _render() {
+    const tSync = (k, v) => (window._fd && window._fd.tSync ? window._fd.tSync(k, v) : k);
     this.innerHTML = `
-<ha-card header="Budget Konfiguration">
+<ha-card header="${tSync("budget_config.title")}">
 <style>
   .bcc { padding: 16px; font-size: 14px; }
   .bcc-row { display: flex; justify-content: space-between; align-items: center;
@@ -53,7 +54,7 @@ class FdBudgetConfig extends HTMLElement {
     <span class="bcc-label">Split-Modell</span>
     <select class="bcc-select" id="splitMode">
       <option value="equal">Equal (50/50)</option>
-      <option value="proportional">Proportional (Einkommen)</option>
+      <option value="proportional">${tSync("budget_config.proportional")}</option>
       <option value="custom">Custom (manuell)</option>
     </select>
   </div>
@@ -65,7 +66,7 @@ class FdBudgetConfig extends HTMLElement {
     </select>
   </div>
   <div class="bcc-section">
-    <h4>Vorschau Spielgeld</h4>
+    <h4>${tSync("budget_config.preview")}</h4>
     <div class="bcc-preview" id="preview">
       <div style="color:var(--secondary-text-color);font-size:13px;text-align:center">
         Lade...

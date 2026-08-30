@@ -1,0 +1,42 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurazione Enable Banking",
+        "description": "Inserisci le credenziali API di Enable Banking.\n\n**Come ottenerle:**\n1. Vai su [{enablebanking_url}/cp/applications]({enablebanking_url}/cp/applications)\n2. Scegli **Sandbox** (per i test) oppure **Production**\n3. Seleziona **Generate in the browser** per la chiave\n4. Inserisci un nome per l'applicazione (per es. \"Home Assistant Finance\")\n5. Aggiungi la redirect URL della tua istanza HA: `{redirect_url}`\n6. Premi **Register** — la chiave privata viene scaricata automaticamente\n7. Copia l'**Application ID** dalla pagina di conferma\n\n**Sicurezza:** le credenziali sono cifrate e salvate localmente in Home Assistant.\n\nAl termine apri il pannello **Finance** nella barra laterale per collegare la banca.",
+        "data": {
+          "application_id": "Application ID",
+          "private_key_pem": "Chiave privata (PEM)"
+        }
+      }
+    },
+    "error": {
+      "missing_credentials": "Inserisci sia l'Application ID sia la chiave privata.",
+      "invalid_key_format": "Impossibile caricare la chiave privata. Incolla il contenuto PEM completo, comprese le righe -----BEGIN/END PRIVATE KEY-----.",
+      "invalid_credentials": "Enable Banking ha rifiutato le credenziali (HTTP 401/403). Verifica che l'Application ID corrisponda alla chiave privata e che l'applicazione sia attiva.",
+      "no_institutions": "Nessuna banca trovata per il tuo paese. Controlla il paese impostato in Home Assistant, oppure impostalo nelle opzioni dell'integrazione.",
+      "connection_failed": "Connessione a Enable Banking fallita. Controlla la connessione a internet."
+    },
+    "abort": {
+      "already_configured": "Finance è già configurato."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Impostazioni Finance",
+        "data": {
+          "country": "Paese della banca (ISO 3166-1 alpha-2, per es. DE, IT)",
+          "refresh_interval_minutes": "Intervallo di aggiornamento (minuti)",
+          "split_model": "Modello di ripartizione del budget",
+          "currency": "Valuta",
+          "enable_total_balance_sensor": "Attiva il sensore del saldo totale",
+          "enable_dashboard_panel": "Mostra il pannello nella barra laterale",
+          "transfer_detection_enabled": "Rilevamento delle catene di giroconti",
+          "transfer_amount_tolerance": "Tolleranza sull'importo (EUR)",
+          "transfer_time_window": "Finestra temporale (giorni)"
+        }
+      }
+    }
+  }
+}

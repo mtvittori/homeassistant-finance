@@ -18,6 +18,17 @@
 
 const CARD_REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 
+/**
+ * Translate through the panel bundle when it is loaded.  The card can be
+ * placed on a dashboard without the Finance panel, so an English fallback
+ * is passed for every key instead of rendering a raw key name.
+ */
+function _fdCardT(key, fallback) {
+  if (!window._fd || !window._fd.tSync) return fallback;
+  const text = window._fd.tSync(key);
+  return text === key ? fallback : text;
+}
+
 class FinanceDashboardCard extends HTMLElement {
   constructor() {
     super();
@@ -90,10 +101,10 @@ class FinanceDashboardCard extends HTMLElement {
         `;
       }
 
-      this.content.innerHTML = html || "<p>Kein Konto verknüpft.</p>";
+      this.content.innerHTML = html || `<p>${_fdCardT("card.no_account", "No account linked.")}</p>`;
     } catch {
       this.content.innerHTML =
-        '<p style="color: var(--secondary-text-color);">Einrichtung erforderlich.</p>';
+        `<p style="color: var(--secondary-text-color);">${_fdCardT("card.setup_required", "Setup required.")}</p>`;
     } finally {
       this._fetching = false;
     }
@@ -170,5 +181,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "finance-dashboard-card",
   name: "Finance",
-  description: "Kontostand und Transaktionen auf einen Blick.",
+  description: _fdCardT("card.description", "Balance and transactions at a glance."),
 });

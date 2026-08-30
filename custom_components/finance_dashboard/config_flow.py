@@ -34,6 +34,7 @@ from .const import (
     OPT_AUTO_REFRESH_MAX_AGE_MINUTES,
     OPT_AUTO_REFRESH_ON_OPEN,
 )
+from .messages import msg
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -160,11 +161,10 @@ class FinanceDashboardConfigFlow(ConfigFlow, domain=DOMAIN):
 
                             pn_async_create(
                                 self.hass,
-                                message=(
-                                    "Öffne das Finance-Panel in der Sidebar, "
-                                    "um deine erste Bank zu verbinden."
+                                message=msg(self.hass, "setup.complete_notification"),
+                                title=msg(
+                                    self.hass, "setup.complete_notification_title"
                                 ),
-                                title="Finance Dashboard eingerichtet",
                                 notification_id="fd_setup_complete",
                             )
                             return self.async_create_entry(

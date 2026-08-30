@@ -108,8 +108,8 @@ class FdHouseholdSection extends HTMLElement {
 
       sharedEl.innerHTML = `
 <div class="card">
-  <div class="card-h">Geteilte Fixkosten
-    <span style="font-weight:400;font-size:12px;color:var(--tx2)">${eur(household.total_shared_costs)} gesamt</span>
+  <div class="card-h">${window._fd.tSync("household.shared_fixed")}
+    <span style="font-weight:400;font-size:12px;color:var(--tx2)">${window._fd.tSync("household.total_suffix", { amount: eur(household.total_shared_costs) })}</span>
   </div>
   <div style="padding:14px 18px">
     <div class="cost-bar">${barSegments}</div>

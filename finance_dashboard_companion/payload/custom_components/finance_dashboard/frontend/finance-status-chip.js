@@ -18,9 +18,9 @@
 
 const STATES = {
   idle: { icon: "dot", label: null, cls: "idle" },
-  loading: { icon: "spinner", label: "Aktualisiert\u2026", cls: "loading" },
-  success: { icon: "check", label: "Aktualisiert", cls: "success" },
-  error: { icon: "alert", label: "Fehler", cls: "error" },
+  loading: { icon: "spinner", label: "chip.updating", cls: "loading" },
+  success: { icon: "check", label: "chip.updated", cls: "success" },
+  error: { icon: "alert", label: "chip.error", cls: "error" },
 };
 
 class FinanceStatusChip extends HTMLElement {
@@ -67,7 +67,7 @@ class FinanceStatusChip extends HTMLElement {
     }
 
     this._state = state;
-    this._errorMsg = state === "error" ? (errorMsg || "Fehler") : null;
+    this._errorMsg = state === "error" ? (errorMsg || window._fd.tSync("chip.error")) : null;
 
     if (state === "success") {
       this._lastUpdate = new Date();
@@ -259,9 +259,9 @@ class FinanceStatusChip extends HTMLElement {
 
   _getLabelText(s) {
     if (this._state === "error") {
-      return this._errorMsg || "Fehler";
+      return this._errorMsg || window._fd.tSync("chip.error");
     }
-    if (s.label) return s.label;
+    if (s.label) return window._fd.tSync(s.label);
     // idle — show timestamp
     if (this._lastUpdate) {
       const hh = String(this._lastUpdate.getHours()).padStart(2, "0");

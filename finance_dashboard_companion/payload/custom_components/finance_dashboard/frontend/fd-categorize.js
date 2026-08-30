@@ -23,8 +23,9 @@ class FdCategorize extends HTMLElement {
   setConfig(config) { this._config = config || {}; }
 
   _render() {
+    const tSync = (k, v) => (window._fd && window._fd.tSync ? window._fd.tSync(k, v) : k);
     this.innerHTML = `
-<ha-card header="Transaktionen kategorisieren">
+<ha-card header="${tSync("categorize.title")}">
 <style>
   .fdc { padding: 16px; font-size: 13px; }
   .fdc-info { color: var(--secondary-text-color); font-size: 12px; margin-bottom: 14px;
@@ -61,8 +62,8 @@ class FdCategorize extends HTMLElement {
 </style>
 <div class="fdc" id="fdc">
   <div class="fdc-info">
-    Ziehe Transaktionen in die passende Kategorie. Das System lernt neue Zuordnungsregeln automatisch.
-    <strong>Nur f&uuml;r Admins sichtbar.</strong>
+    ${tSync("categorize.info")}
+    <strong>${tSync("categorize.admin_only")}</strong>
   </div>
   <div class="fdc-grid">
     <div class="fdc-txns" id="txnList"></div>
@@ -74,12 +75,13 @@ class FdCategorize extends HTMLElement {
   }
 
   async _load() {
+    const tSync = (k, v) => (window._fd && window._fd.tSync ? window._fd.tSync(k, v) : k);
     if (!this._hass) return;
     try {
       const data = await this._hass.callApi("GET", "finance_dashboard/transactions");
       if (data.privacy === "aggregate_only") {
         this.querySelector("#fdc").innerHTML =
-          '<div class="fdc-none">Admin-Zugang erforderlich.</div>';
+          `<div class="fdc-none">${tSync("categorize.admin_required")}</div>`;
         return;
       }
       this._renderTransactions(data.transactions || []);
@@ -87,6 +89,7 @@ class FdCategorize extends HTMLElement {
   }
 
   _renderTransactions(txns) {
+    const tSync = (k, v) => (window._fd && window._fd.tSync ? window._fd.tSync(k, v) : k);
     const eur = (v) => new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR"}).format(v);
     const cats = ["housing","food","transport","insurance","subscriptions","loans","utilities","cleaning","other"];
     // catColors comes from window._fd.CAT_COLORS (set by fd-shared-styles.js)
@@ -97,7 +100,7 @@ class FdCategorize extends HTMLElement {
 
     const txnList = this.querySelector("#txnList");
     if (uncategorized.length === 0) {
-      txnList.innerHTML = '<div class="fdc-none">Alle Transaktionen sind kategorisiert.</div>';
+      txnList.innerHTML = `<div class="fdc-none">${tSync("categorize.all_done")}</div>`;
     } else {
       txnList.innerHTML = uncategorized.map((t, i) => {
         const amt = parseFloat(t.amount);
@@ -105,8 +108,8 @@ class FdCategorize extends HTMLElement {
           data-creditor="${(t.creditor||t.description||'').replace(/"/g,'')}"
           data-amount="${t.amount}">
           <span class="amt ${amt>=0?'pos':'neg'}">${eur(amt)}</span>
-          <div class="name">${t.creditor || t.description || 'Unbekannt'}</div>
-          <div class="meta">${t.date} &middot; ${t.category || 'unkategorisiert'}</div>
+          <div class="name">${t.creditor || t.description || tSync("categorize.unknown")}</div>
+          <div class="meta">${t.date} &middot; ${t.category || tSync("categorize.uncategorized")}</div>
         </div>`;
       }).join("");
 

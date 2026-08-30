@@ -94,25 +94,25 @@ class FdCategorySection extends HTMLElement {
 
 <div class="grid">
   <div class="card">
-    <div class="card-h">Ausgaben nach Kategorie</div>
+    <div class="card-h">${window._fd.tSync("category.section.title")}</div>
     <fd-donut-chart id="donut"></fd-donut-chart>
   </div>
   <div>
     <div class="card" style="margin-bottom:14px">
-      <div class="card-h">Top-3 Kostentreiber</div>
-      <div class="top-list">${top3 || `<div style="color:var(--tx2);font-size:13px;padding:18px">Keine Daten</div>`}</div>
+      <div class="card-h">${window._fd.tSync("category.section.top3")}</div>
+      <div class="top-list">${top3 || `<div style="color:var(--tx2);font-size:13px;padding:18px">${window._fd.tSync("category.section.no_data")}</div>`}</div>
     </div>
     <div class="card">
-      <div class="card-h">Fix vs. Variabel</div>
+      <div class="card-h">${window._fd.tSync("category.section.fix_var")}</div>
       <div class="fv">
         <div class="fv-block">
           <div class="v">${eur(fixedCosts)}</div>
-          <div class="l">Fixkosten (${fixPct}%)</div>
+          <div class="l">${window._fd.tSync("category.section.fixed", { pct: fixPct })}</div>
           <div class="fv-bar"><div style="width:${fixPct}%;height:100%;background:var(--bl);border-radius:4px"></div></div>
         </div>
         <div class="fv-block">
           <div class="v">${eur(varCosts)}</div>
-          <div class="l">Variabel (${varPct}%)</div>
+          <div class="l">${window._fd.tSync("category.section.variable", { pct: varPct })}</div>
           <div class="fv-bar"><div style="width:${varPct}%;height:100%;background:var(--wn);border-radius:4px"></div></div>
         </div>
       </div>

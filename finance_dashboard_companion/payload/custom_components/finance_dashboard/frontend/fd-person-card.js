@@ -77,15 +77,15 @@ class FdPersonCard extends HTMLElement {
 <style>${SHARED_CSS}${LOCAL_CSS}</style>
 <div class="person">
   <div class="name">${escHtml(m.person)}</div>
-  <div class="ratio">Einkommensanteil: ${(m.income_ratio || 0).toFixed(1)}% &middot; ${escHtml(splitLabel)}</div>
+  <div class="ratio">${window._fd.tSync("person.income_ratio", { pct: (m.income_ratio || 0).toFixed(1) })} &middot; ${escHtml(splitLabel)}</div>
   <ul class="rows">
-    <li class="row"><span class="l">Einkommen (netto)</span><span>${eur(m.net_income)}</span></li>
-    <li class="row"><span class="l">Anteil Fixkosten</span><span class="neg">${eur(m.shared_costs_share)}</span></li>
-    <li class="row"><span class="l">Eigene Ausgaben</span><span class="neg">${eur(m.individual_costs)}</span></li>
+    <li class="row"><span class="l">${window._fd.tSync("person.net_income")}</span><span>${eur(m.net_income)}</span></li>
+    <li class="row"><span class="l">${window._fd.tSync("person.shared_share")}</span><span class="neg">${eur(m.shared_costs_share)}</span></li>
+    <li class="row"><span class="l">${window._fd.tSync("person.own_expenses")}</span><span class="neg">${eur(m.individual_costs)}</span></li>
     ${bonusRow}
   </ul>
   <div class="saldo">
-    <span class="l">Spielgeld</span>
+    <span class="l">${window._fd.tSync("person.pocket_money")}</span>
     <span class="v ${spielgeldClass}">${eur(m.spielgeld)}</span>
   </div>
 </div>`;

@@ -60,30 +60,30 @@ class FdStatsRow extends HTMLElement {
 </div>`;
 
     const balance = this.shadowRoot.getElementById("balance");
-    balance.label = "Gesamtsaldo";
+    balance.label = window._fd.tSync("stats.balance");
     balance.value = eur(totalBalance);
-    balance.subtitle = `${accountCount} ${accountCount === 1 ? "Konto" : "Konten"}`;
+    balance.subtitle = `${accountCount} ${window._fd.tSync(accountCount === 1 ? "general.accounts_singular" : "general.accounts_plural")}`;
     balance.accent = "var(--accent-color, #4ecca3)";
     balance.valclass = totalBalance >= 0 ? "pos" : "neg";
 
     const expenses = this.shadowRoot.getElementById("expenses");
-    expenses.label = "Ausgaben";
+    expenses.label = window._fd.tSync("stats.expenses");
     expenses.value = eur(totalExp);
-    expenses.subtitle = `${txnCount} Transaktionen`;
+    expenses.subtitle = window._fd.tSync("stats.transactions", { n: txnCount });
     expenses.accent = "var(--dg, #e74c3c)";
     expenses.valclass = "neg";
 
     const income = this.shadowRoot.getElementById("income");
-    income.label = "Einnahmen";
+    income.label = window._fd.tSync("stats.income");
     income.value = eur(totalInc);
-    income.subtitle = "Netto";
+    income.subtitle = window._fd.tSync("stats.net");
     income.accent = "var(--bl, #3b82f6)";
     income.valclass = "";
 
     const savings = this.shadowRoot.getElementById("savings");
-    savings.label = "Sparquote";
+    savings.label = window._fd.tSync("stats.savings_rate");
     savings.value = `${savingsRate}%`;
-    savings.subtitle = `${surplus >= 0 ? "+" : ""}${eur(surplus)} Monatssaldo`;
+    savings.subtitle = window._fd.tSync("stats.month_balance", { amount: `${surplus >= 0 ? "+" : ""}${eur(surplus)}` });
     savings.accent = "var(--pp, #8b5cf6)";
     savings.valclass = "";
   }
@@ -111,7 +111,7 @@ class FdStatsRow extends HTMLElement {
     ["balance", "expenses", "income", "savings"].forEach((id) => {
       const el = this.shadowRoot.getElementById(id);
       if (el) {
-        el.label = { balance: "Gesamtsaldo", expenses: "Ausgaben", income: "Einnahmen", savings: "Sparquote" }[id];
+        el.label = window._fd.tSync({ balance: "stats.balance", expenses: "stats.expenses", income: "stats.income", savings: "stats.savings_rate" }[id]);
         el.setData(null); // triggers skeleton
       }
     });

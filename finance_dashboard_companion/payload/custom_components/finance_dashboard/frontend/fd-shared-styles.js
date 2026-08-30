@@ -55,31 +55,34 @@ export const CAT_COLORS = {
   other: "#6b7280",
 };
 
-/** Category label mapping (German). */
-export const CAT_LABELS = {
-  housing: "Wohnen",
-  loans: "Kredite",
-  food: "Lebensmittel",
-  utilities: "Nebenkosten",
-  insurance: "Versicherung",
-  subscriptions: "Abos",
-  transport: "Mobilität",
-  cleaning: "Reinigung",
-  income: "Einkommen",
-  transfers: "Überträge",
-  other: "Sonstiges",
-};
+/** Category slugs the backend can emit — labels come from the locale files. */
+export const CAT_KEYS = [
+  "housing", "loans", "food", "utilities", "insurance", "subscriptions",
+  "transport", "cleaning", "income", "transfers", "other",
+];
+
+/**
+ * Category label mapping, resolved through the active locale.
+ * Consumers index it like a plain object (`CAT_LABELS[cat]`); the Proxy
+ * translates on access so a language switch needs no re-import.
+ */
+export const CAT_LABELS = new Proxy({}, {
+  get: (_t, cat) => (typeof cat === "string" ? tSync(`category.${cat}`) : undefined),
+  has: (_t, cat) => CAT_KEYS.includes(cat),
+  ownKeys: () => [...CAT_KEYS],
+  getOwnPropertyDescriptor: () => ({ enumerable: true, configurable: true }),
+});
 
 /** Member color palette for household charts. */
 export const MEMBER_COLORS = [
   "#3b82f6", "#8b5cf6", "#f97316", "#ec4899", "#06b6d4",
 ];
 
-/** German month names (abbreviated). */
-export const MONTH_NAMES = [
-  "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
-  "Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
-];
+/** Abbreviated month names in the active language (via Intl). */
+export function monthNames() {
+  const fmt = new Intl.DateTimeFormat(_resolveLang(), { month: "short" });
+  return Array.from({ length: 12 }, (_, m) => fmt.format(new Date(2000, m, 1)));
+}
 
 /**
  * CSS custom properties and base styles shared across all dashboard components.
@@ -181,7 +184,7 @@ a:focus:not(:focus-visible),
  *   2. navigator.language
  *   3. Fallback: "en"
  *
- * Supported languages: "de", "en". Unknown languages fall back to "en".
+ * Supported languages: "de", "en", "it". Unknown languages fall back to "en".
  */
 const _i18nCache = {};
 
@@ -202,7 +205,7 @@ function _resolveLang() {
   const hassLang = window._fd && window._fd._hass && window._fd._hass.language;
   const raw = hassLang || navigator.language || "en";
   const base = raw.toLowerCase().split("-")[0];
-  return ["de", "en"].includes(base) ? base : "en";
+  return ["de", "en", "it"].includes(base) ? base : "en";
 }
 
 /**
@@ -249,8 +252,9 @@ window._fd = {
   pct,
   CAT_COLORS,
   CAT_LABELS,
+  CAT_KEYS,
   MEMBER_COLORS,
-  MONTH_NAMES,
+  get MONTH_NAMES() { return monthNames(); },
   SHARED_CSS,
   t,
   tSync,
@@ -264,7 +268,7 @@ window._fd = {
  */
 (function _warmupLocales() {
   const raw = (navigator.language || "en").toLowerCase().split("-")[0];
-  const lang = ["de", "en"].includes(raw) ? raw : "en";
+  const lang = ["de", "en", "it"].includes(raw) ? raw : "en";
   // Fire-and-forget: populate _i18nCache before first render tick
   _loadLocale(lang);
   if (lang !== "en") _loadLocale("en");

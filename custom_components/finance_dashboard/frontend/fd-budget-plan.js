@@ -76,7 +76,7 @@ class FdBudgetPlan extends HTMLElement {
       this._benchmark = benchmark;
       this._loaded = true;
     } catch (err) {
-      this._error = (err && err.message) || "Haushaltsplan konnte nicht geladen werden";
+      this._error = (err && err.message) || window._fd.tSync("budget.load_failed");
     } finally {
       this._loading = false;
       this._render();
@@ -90,7 +90,7 @@ class FdBudgetPlan extends HTMLElement {
   }
 
   _render() {
-    const { SHARED_CSS, escHtml, MEMBER_COLORS } = window._fd || {};
+    const { SHARED_CSS, escHtml, MEMBER_COLORS, tSync } = window._fd || {};
     if (!SHARED_CSS) return;
 
     const eur = (v) =>
@@ -150,7 +150,7 @@ tbody tr + tr td { border-top: 1px solid var(--bd); }
       this.shadowRoot.innerHTML = `
 <style>${SHARED_CSS}${LOCAL_CSS}</style>
 <div class="card">
-  <div class="card-h">Haushaltsplan</div>
+  <div class="card-h">${tSync("budget.title")}</div>
   <div class="empty">${escHtml(this._error)}</div>
 </div>`;
       return;
@@ -160,8 +160,8 @@ tbody tr + tr td { border-top: 1px solid var(--bd); }
       this.shadowRoot.innerHTML = `
 <style>${SHARED_CSS}${LOCAL_CSS}</style>
 <div class="card">
-  <div class="card-h">Haushaltsplan</div>
-  <div class="empty">Wird geladen …</div>
+  <div class="card-h">${tSync("budget.title")}</div>
+  <div class="empty">${tSync("budget.loading")}</div>
 </div>`;
       return;
     }
@@ -171,15 +171,12 @@ tbody tr + tr td { border-top: 1px solid var(--bd); }
       this.shadowRoot.innerHTML = `
 <style>${SHARED_CSS}${LOCAL_CSS}</style>
 <div class="card">
-  <div class="card-h">Haushaltsplan</div>
+  <div class="card-h">${tSync("budget.title")}</div>
   <div class="empty">
-    Noch kein Plan vorhanden. Die Haushaltskalkulation kann direkt aus der
-    Excel-Datei übernommen werden — Einkommen, alle Kostenpositionen mit
-    Zuordnung, Puffer und Laufzeiten.
+    ${tSync("budget.empty")}
     <code>Entwicklerwerkzeuge → Aktionen → Finance: Import Household Spreadsheet
 path: /config/Kalkulation Haushalt.xlsx</code>
-    Die Datei muss im Config-Verzeichnis liegen oder ihr Ordner in
-    <em>allowlist_external_dirs</em> eingetragen sein.
+    ${tSync("budget.empty_hint")}
   </div>
 </div>`;
       return;
@@ -195,6 +192,7 @@ ${this._renderBenchmark(escHtml)}`;
   }
 
   _renderPockets(plan, eur, escHtml, colors) {
+    const { tSync } = window._fd;
     const split = plan.split || {};
     const members = split.members || [];
     if (!members.length) return "";
@@ -210,8 +208,8 @@ ${this._renderBenchmark(escHtml)}`;
   </div>
   <div class="amt ${m.spielgeld < 0 ? "neg" : ""}">${eur(m.spielgeld)}</div>
   <div class="brk">
-    Anteil am Rest ${eur(m.remainder_share)}<br>
-    − eigene Fixkosten ${eur(m.individual_costs)}
+    ${tSync("budget.remainder_share", { amount: eur(m.remainder_share) })}<br>
+    ${tSync("budget.own_fixed", { amount: eur(m.individual_costs) })}
   </div>
 </div>`
       )
@@ -219,9 +217,9 @@ ${this._renderBenchmark(escHtml)}`;
 
     return `
 <div class="card">
-  <div class="card-h">Taschengeld
+  <div class="card-h">${tSync("budget.pockets")}
     <span style="font-weight:400;font-size:12px;color:var(--tx2)">
-      ${eur(split.spielgeld_total)} gesamt · Modell ${escHtml(split.model || "")}
+      ${tSync("budget.pockets_summary", { amount: eur(split.spielgeld_total), model: escHtml(split.model || "") })}
     </span>
   </div>
   <div class="pockets">${cards}</div>
@@ -229,6 +227,7 @@ ${this._renderBenchmark(escHtml)}`;
   }
 
   _renderIncome(plan, eur, pct, escHtml) {
+    const { tSync } = window._fd;
     const rows = (plan.income || [])
       .map(
         (e) => `
@@ -245,16 +244,16 @@ ${this._renderBenchmark(escHtml)}`;
 
     return `
 <div class="card">
-  <div class="card-h">Einkommen
+  <div class="card-h">${tSync("budget.income")}
     <span style="font-weight:400;font-size:12px;color:var(--tx2)">
-      ${eur(plan.income_net_total)} netto gesamt
+      ${tSync("budget.income_summary", { amount: eur(plan.income_net_total) })}
     </span>
   </div>
   <div class="scroll">
     <table>
       <thead><tr>
-        <th>Person</th><th>Eingang</th><th>Privat-KV</th>
-        <th>Steuerausgleich</th><th>Netto</th><th>Anteil</th>
+        <th>${tSync("budget.col_person")}</th><th>${tSync("budget.col_deposit")}</th><th>${tSync("budget.col_insurance")}</th>
+        <th>${tSync("budget.col_tax")}</th><th>${tSync("budget.col_net")}</th><th>${tSync("budget.col_share")}</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -263,6 +262,7 @@ ${this._renderBenchmark(escHtml)}`;
   }
 
   _renderLedger(plan, eur, escHtml) {
+    const { tSync } = window._fd;
     const positions = plan.positions || [];
     if (!positions.length) return "";
 
@@ -273,7 +273,7 @@ ${this._renderBenchmark(escHtml)}`;
       groups.get(p.owner).push(p);
     }
 
-    const label = (owner) => (owner === "__shared__" ? "Gemeinsam" : owner);
+    const label = (owner) => (owner === "__shared__" ? tSync("budget.shared_owner") : owner);
     const total = (owner) =>
       owner === "__shared__" ? costs.shared : (costs.individual || {})[owner];
 
@@ -285,13 +285,14 @@ ${this._renderBenchmark(escHtml)}`;
             const tags = [];
             if (p.kind === "buffer") {
               tags.push(
-                `<span class="tag">Puffer ${p.buffer_units || "?"} × ${eur(
-                  p.buffer_unit_price
-                )}</span>`
+                `<span class="tag">${tSync("budget.tag_buffer", {
+                  units: p.buffer_units || "?",
+                  price: eur(p.buffer_unit_price),
+                })}</span>`
               );
             }
-            if (p.valid_until) tags.push(`<span class="tag">bis ${escHtml(p.valid_until)}</span>`);
-            if (!p.is_active) tags.push(`<span class="tag">inaktiv</span>`);
+            if (p.valid_until) tags.push(`<span class="tag">${tSync("budget.tag_until", { date: escHtml(p.valid_until) })}</span>`);
+            if (!p.is_active) tags.push(`<span class="tag">${tSync("budget.tag_inactive")}</span>`);
             const cls = p.effective_amount < 0 ? "pos" : "";
             return `
 <tr>
@@ -304,12 +305,12 @@ ${this._renderBenchmark(escHtml)}`;
 
         return `
 <div class="card">
-  <div class="card-h">Kosten — ${escHtml(label(owner))}
+  <div class="card-h">${tSync("budget.costs_of", { owner: escHtml(label(owner)) })}
     <span style="font-weight:400;font-size:12px;color:var(--tx2)">${eur(total(owner))}</span>
   </div>
   <div class="scroll">
     <table>
-      <thead><tr><th>Position</th><th>Kategorie</th><th>Betrag</th></tr></thead>
+      <thead><tr><th>${tSync("budget.col_position")}</th><th>${tSync("budget.col_category")}</th><th>${tSync("budget.col_amount")}</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </div>
@@ -321,12 +322,13 @@ ${this._renderBenchmark(escHtml)}`;
   }
 
   _renderTransfer(eur, escHtml) {
+    const { tSync } = window._fd;
     const tp = this._transfer;
     if (!tp || !tp.accounts || !tp.accounts.length) return "";
 
     const accounts = tp.accounts;
     const head = accounts
-      .map((a) => `<th>${escHtml(a.label)}${a.role === "pass_through" ? '<span class="tag">Durchlauf</span>' : ""}</th>`)
+      .map((a) => `<th>${escHtml(a.label)}${a.role === "pass_through" ? `<span class="tag">${tSync("budget.tag_passthrough")}</span>` : ""}</th>`)
       .join("");
 
     const rows = (tp.rows || [])
@@ -348,17 +350,17 @@ ${this._renderBenchmark(escHtml)}`;
     const imbalances = Object.values(tp.imbalances || {});
     let badge;
     if (tp.balanced) {
-      badge = `<span class="badge ok">Durchlaufkonto geht auf 0 auf</span>`;
+      badge = `<span class="badge ok">${tSync("budget.transfer.balanced")}</span>`;
     } else if (unplaced.length) {
       // An unplaced amount is worse than an imbalance: the money has no account
       // at all, so the plan is incomplete rather than merely off.
-      badge = `<span class="badge warn">Nicht zuordenbar: ${unplaced
-        .map((u) => eur(u.amount))
-        .join(", ")}</span>`;
+      badge = `<span class="badge warn">${tSync("budget.transfer.unplaced", {
+        amounts: unplaced.map((u) => eur(u.amount)).join(", "),
+      })}</span>`;
     } else {
-      badge = `<span class="badge warn">Plan geht nicht auf: ${imbalances
-        .map((v) => eur(v))
-        .join(", ")}</span>`;
+      badge = `<span class="badge warn">${tSync("budget.transfer.imbalance", {
+        amounts: imbalances.map((v) => eur(v)).join(", "),
+      })}</span>`;
     }
 
     const unplacedNote = unplaced.length
@@ -371,7 +373,7 @@ ${this._renderBenchmark(escHtml)}`;
       .filter(([, s]) => Math.abs(s.settlement_delta) > 0.5)
       .map(
         ([person, s]) =>
-          `${escHtml(person)}: ${s.settlement_delta > 0 ? "streckt vor" : "wird getragen"} ${eur(
+          `${escHtml(person)}: ${s.settlement_delta > 0 ? tSync("budget.transfer.advances") : tSync("budget.transfer.covered")} ${eur(
             Math.abs(s.settlement_delta)
           )}`
       )
@@ -379,10 +381,10 @@ ${this._renderBenchmark(escHtml)}`;
 
     return `
 <div class="card">
-  <div class="card-h">Monatliche Umbuchungen ${badge}</div>
+  <div class="card-h">${tSync("budget.transfer.title")} ${badge}</div>
   <div class="scroll">
     <table>
-      <thead><tr><th>Schritt</th>${head}</tr></thead>
+      <thead><tr><th>${tSync("budget.transfer.col_step")}</th>${head}</tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </div>
@@ -392,6 +394,7 @@ ${this._renderBenchmark(escHtml)}`;
   }
 
   _renderBenchmark(escHtml) {
+    const { tSync } = window._fd;
     const bm = this._benchmark;
     const items = (bm && bm.comparisons) || [];
     if (!items.length) return "";
@@ -420,7 +423,7 @@ ${this._renderBenchmark(escHtml)}`;
 
     return `
 <div class="card">
-  <div class="card-h">Vergleich Deutschland</div>
+  <div class="card-h">${tSync("budget.benchmark.title")}</div>
   <div class="bm">${rows}</div>
 </div>`;
   }

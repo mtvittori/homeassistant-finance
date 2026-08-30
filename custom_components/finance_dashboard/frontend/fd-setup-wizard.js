@@ -820,7 +820,7 @@ class FdSetupWizard extends HTMLElement {
     if (this._loading) {
       return `<div class="loading-spinner">${tSync("wizard.step.2.loading")}</div>`;
     }
-    const bankName = this._selectedInstitution ? this._selectedInstitution.name : "Bank";
+    const bankName = this._selectedInstitution ? this._selectedInstitution.name : tSync("wizard.step.1.title");
     const min = Math.floor(this._countdownSec / 60);
     const sec = String(this._countdownSec % 60).padStart(2, "0");
     return `
