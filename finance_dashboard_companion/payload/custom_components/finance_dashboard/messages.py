@@ -77,6 +77,11 @@ MESSAGES: dict[str, dict[str, str]] = {
             "scheda e tornare a Finance."
         ),
     },
+    "refresh.no_credentials": {
+        "de": "Keine Enable-Banking-Credentials hinterlegt",
+        "en": "No Enable Banking credentials stored",
+        "it": "Nessuna credenziale Enable Banking salvata",
+    },
     "refresh.rate_limited": {
         "de": "Tageslimit der Bank-API erreicht (4/Tag pro Konto)",
         "en": "Daily bank API limit reached (4/day per account)",

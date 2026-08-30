@@ -92,10 +92,16 @@ async def async_register_panel(hass: HomeAssistant) -> None:
 
 
 async def async_unregister_panel(hass: HomeAssistant) -> None:
-    """Unregister custom sidebar panel."""
-    from homeassistant.components import panel_custom
+    """Unregister custom sidebar panel.
+
+    ``frontend.async_remove_panel`` is the supported way to drop a panel;
+    ``panel_custom`` exposes no unregister helper, so the previous call
+    raised AttributeError, was swallowed, and left the panel registered —
+    which then made the next registration fail with "Overwriting panel".
+    """
+    from homeassistant.components import frontend
 
     try:
-        panel_custom.async_unregister_panel(hass, PANEL_URL_PATH)
+        frontend.async_remove_panel(hass, PANEL_URL_PATH, warn_if_unknown=False)
     except Exception:
         _LOGGER.debug("Panel was not registered, nothing to remove")

@@ -203,7 +203,7 @@ class RefreshMixin:
                 accounts=0,
                 transactions=len(self._transactions),
                 new=0,
-                errors=["Keine Enable-Banking-Credentials hinterlegt"],
+                errors=[msg(self.hass, "refresh.no_credentials")],
             )
             return []
 
@@ -462,6 +462,7 @@ class RefreshMixin:
 
         return kept + fresh
 
+    @staticmethod
     def _build_stats(
         outcome: str,
         started: datetime,
