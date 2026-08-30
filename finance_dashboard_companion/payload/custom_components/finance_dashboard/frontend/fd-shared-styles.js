@@ -55,6 +55,9 @@ export const CAT_COLORS = {
   other: "#6b7280",
 };
 
+/** Integration domain — also the base of every panel API path. */
+export const FD_DOMAIN = "finance_dashboard";
+
 /** Category slugs the backend can emit — labels come from the locale files. */
 export const CAT_KEYS = [
   "housing", "loans", "food", "utilities", "insurance", "subscriptions",
@@ -246,6 +249,7 @@ function tSync(key, vars = {}) {
  * fd-shared-styles.js is always loaded first in LOVELACE_COMPONENTS.
  */
 window._fd = {
+  DOMAIN: FD_DOMAIN,
   escHtml,
   esc,
   eur,

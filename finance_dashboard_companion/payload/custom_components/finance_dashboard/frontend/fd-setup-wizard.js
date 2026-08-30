@@ -20,7 +20,11 @@
  *   fd-setup-closed   — Wizard closed (cancel or success)
  */
 
-// DOMAIN is declared by fd-data-provider.js (loaded first, shared global scope)
+// API base path. Resolved through window._fd so this file works whether the
+// panel bundle is served as ES modules (own scope per file) or as classic
+// scripts (shared global scope).
+const _fdWizardDomain = () => (window._fd && window._fd.DOMAIN) || "finance_dashboard";
+
 const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_MS = 300000; // 5 minutes
 
@@ -123,7 +127,7 @@ class FdSetupWizard extends HTMLElement {
 
   async _loadInstitutions() {
     if (!this._hass) return;
-    const endpoint = `${DOMAIN}/setup/institutions`;
+    const endpoint = `${_fdWizardDomain()}/setup/institutions`;
     this._loading = true;
     this._error = null;
     this._cachedAt = null;
@@ -203,7 +207,7 @@ class FdSetupWizard extends HTMLElement {
     this._renderContent();
 
     try {
-      const result = await this._hass.callApi("POST", `${DOMAIN}/setup/authorize`, {
+      const result = await this._hass.callApi("POST", `${_fdWizardDomain()}/setup/authorize`, {
         institution_name: institution.name,
         institution_id: institution.id || "",
         institution_logo: institution.logo || "",
@@ -225,7 +229,7 @@ class FdSetupWizard extends HTMLElement {
       // Start polling for callback completion
       this._startPolling();
     } catch (e) {
-      this._error = this._describeTransportError(e, `${DOMAIN}/setup/authorize`);
+      this._error = this._describeTransportError(e, `${_fdWizardDomain()}/setup/authorize`);
       this._loading = false;
       this._renderContent();
     }
@@ -242,7 +246,7 @@ class FdSetupWizard extends HTMLElement {
         return;
       }
       try {
-        const status = await this._hass.callApi("GET", `${DOMAIN}/setup/status`);
+        const status = await this._hass.callApi("GET", `${_fdWizardDomain()}/setup/status`);
         // Backend reported a setup error during the OAuth callback —
         // stop polling immediately and show it to the user instead of
         // waiting for the 5-minute timeout.
@@ -322,7 +326,7 @@ class FdSetupWizard extends HTMLElement {
     }));
 
     try {
-      const result = await this._hass.callApi("POST", `${DOMAIN}/setup/complete`, {
+      const result = await this._hass.callApi("POST", `${_fdWizardDomain()}/setup/complete`, {
         accounts,
       });
       if (result.error) {
@@ -339,7 +343,7 @@ class FdSetupWizard extends HTMLElement {
         composed: true,
       }));
     } catch (e) {
-      this._error = this._describeTransportError(e, `${DOMAIN}/setup/complete`);
+      this._error = this._describeTransportError(e, `${_fdWizardDomain()}/setup/complete`);
       this._loading = false;
       this._renderContent();
     }
