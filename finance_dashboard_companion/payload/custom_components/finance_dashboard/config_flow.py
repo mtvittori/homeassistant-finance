@@ -203,15 +203,16 @@ class FinanceDashboardConfigFlow(ConfigFlow, domain=DOMAIN):
         config_entry: ConfigEntry,
     ) -> FinanceDashboardOptionsFlow:
         """Get the options flow for this handler."""
-        return FinanceDashboardOptionsFlow(config_entry)
+        return FinanceDashboardOptionsFlow()
 
 
 class FinanceDashboardOptionsFlow(OptionsFlow):
-    """Handle options for Finance."""
+    """Handle options for Finance.
 
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
+    ``config_entry`` is supplied by Home Assistant and is a read-only
+    property since 2024.11 — assigning it in ``__init__`` raises
+    AttributeError and the options dialog never opens.
+    """
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""

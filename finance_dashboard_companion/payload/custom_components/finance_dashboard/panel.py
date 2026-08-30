@@ -41,7 +41,15 @@ LOVELACE_COMPONENTS = [
 
 
 async def async_register_panel(hass: HomeAssistant) -> None:
-    """Register the Finance sidebar panel."""
+    """Register the Finance sidebar panel.
+
+    Any panel left over from an earlier setup of this entry is removed
+    first: ``frontend.async_register_built_in_panel`` refuses to overwrite
+    an existing URL path, so a second registration (config-entry reload,
+    or setup running twice in one start) would otherwise raise
+    ``ValueError: Overwriting panel``.
+    """
+    await async_unregister_panel(hass)
     try:
         registrar = PanelRegistrar(
             hass=hass,
