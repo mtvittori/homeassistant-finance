@@ -157,6 +157,9 @@ async def _ask(
     except anthropic.RateLimitError as err:
         raise AdvisorError("claude_rate_limited", "Anthropic rate limit, retry later") from err
     except anthropic.BadRequestError as err:
+        # An empty prepaid balance is a 400 too, and the one worth naming.
+        if "credit balance" in str(err.message).lower():
+            raise AdvisorError("claude_no_credit", "Anthropic credit balance is empty") from err
         raise AdvisorError("claude_bad_request", str(err.message)[:200]) from err
     except anthropic.APIStatusError as err:
         raise AdvisorError("claude_error", f"HTTP {err.status_code}") from err
