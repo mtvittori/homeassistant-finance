@@ -119,6 +119,7 @@ async def async_load(hass: HomeAssistant) -> dict[str, Any]:
         "inps": raw.get("inps") if isinstance(raw.get("inps"), dict) else None,
         "profile": payroll.merge_profile(raw.get("profile")),
         "analysis": raw.get("analysis") if isinstance(raw.get("analysis"), dict) else None,
+        "card_statements": [c for c in raw.get("card_statements") or [] if isinstance(c, dict)],
     }
 
 
@@ -256,6 +257,118 @@ INPS_PROMPT = (
 )
 
 
+CARD_PROMPT = (
+    "Questo è l'estratto conto mensile di una carta di credito (Nexi o simile). Estrai: emittente; "
+    "ultime quattro cifre della carta; data dell'estratto conto; inizio e fine del periodo; "
+    "importo "
+    "totale che verrà addebitato sul conto e data dell'addebito se indicata; una riga per ogni "
+    "operazione con data dell'operazione, data di registrazione se diversa, descrizione così come "
+    "scritta, nome dell'esercente pulito, città se c'è, importo in euro (positivo per una spesa, "
+    "negativo per un rimborso o uno storno) e, per le operazioni in valuta, valuta e importo "
+    "originali. Commissioni, quote annuali e interessi sono righe anche loro. Non includere il "
+    "saldo del mese precedente né il suo addebito."
+)
+
+CARD_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "issuer": {"type": ["string", "null"]},
+        "card_last4": {"type": ["string", "null"]},
+        "statement_date": {"type": "string", "description": "YYYY-MM-DD"},
+        "period_from": {"type": ["string", "null"]},
+        "period_to": {"type": ["string", "null"]},
+        "total_due": {"type": ["number", "null"]},
+        "debit_date": {"type": ["string", "null"]},
+        "transactions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "date": {"type": "string", "description": "YYYY-MM-DD"},
+                    "booking_date": {"type": ["string", "null"]},
+                    "description": {"type": "string"},
+                    "merchant": {"type": ["string", "null"]},
+                    "city": {"type": ["string", "null"]},
+                    "amount": {"type": "number"},
+                    "original_currency": {"type": ["string", "null"]},
+                    "original_amount": {"type": ["number", "null"]},
+                },
+                "required": [
+                    "date",
+                    "booking_date",
+                    "description",
+                    "merchant",
+                    "city",
+                    "amount",
+                    "original_currency",
+                    "original_amount",
+                ],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": [
+        "issuer",
+        "card_last4",
+        "statement_date",
+        "period_from",
+        "period_to",
+        "total_due",
+        "debit_date",
+        "transactions",
+    ],
+    "additionalProperties": False,
+}
+
+READ_KINDS = {
+    "payslip": (PAYSLIP_PROMPT, payroll.PAYSLIP_SCHEMA),
+    "inps": (INPS_PROMPT, payroll.INPS_SCHEMA),
+    "card": (CARD_PROMPT, CARD_SCHEMA),
+}
+
+
+def clean_card_statement(parsed: dict[str, Any]) -> dict[str, Any]:
+    """Checked statement: dates as YYYY-MM-DD, rows with a date, the sum check.
+
+    ``difference`` is total_due minus the sum of the rows: zero when the
+    reading is complete, anything else is shown in the card as a warning.
+    Raises AdvisorError when there is no statement date.
+    """
+
+    def day(v: Any) -> str | None:
+        txt = str(v or "")[:10]
+        try:
+            return date.fromisoformat(txt).isoformat()
+        except ValueError:
+            return None
+
+    when = day(parsed.get("statement_date"))
+    if not when:
+        raise AdvisorError("unreadable_statement", "no statement date found")
+    rows = []
+    for t in parsed.get("transactions") or []:
+        d = day(t.get("date"))
+        if d and isinstance(t.get("amount"), int | float):
+            rows.append({**t, "date": d, "booking_date": day(t.get("booking_date"))})
+    total = round(sum(t["amount"] for t in rows), 2)
+    due = parsed.get("total_due")
+    return {
+        **parsed,
+        "statement_date": when,
+        "period_from": day(parsed.get("period_from")),
+        "period_to": day(parsed.get("period_to")),
+        "debit_date": day(parsed.get("debit_date")),
+        "transactions": sorted(rows, key=lambda t: t["date"]),
+        "rows_total": total,
+        "difference": round(due - total, 2) if isinstance(due, int | float) else None,
+    }
+
+
+def statement_key(c: dict[str, Any]) -> str:
+    """Same card and same statement date = same statement: a re-upload replaces it."""
+    return f"{c.get('card_last4') or ''}|{c.get('statement_date')}"
+
+
 def decode_pdf(raw: Any) -> bytes:
     """Base64 from the card -> PDF bytes, checked. Raises AdvisorError."""
     if not isinstance(raw, str) or not raw:
@@ -272,9 +385,10 @@ def decode_pdf(raw: Any) -> bytes:
 
 
 def start_read(hass: HomeAssistant, kind: str, filename: str, pdf: bytes) -> str:
-    """Read a payslip (kind 'payslip') or the INPS statement (kind 'inps')."""
-    if kind not in ("payslip", "inps"):
-        raise AdvisorError("invalid_kind", "kind must be payslip or inps")
+    """Read a payslip ('payslip'), the INPS statement ('inps') or a card statement ('card')."""
+    if kind not in READ_KINDS:
+        raise AdvisorError("invalid_kind", "kind must be payslip, inps or card")
+    prompt, schema = READ_KINDS[kind]
     data = base64.standard_b64encode(pdf).decode()
 
     async def work() -> None:
@@ -283,9 +397,8 @@ def start_read(hass: HomeAssistant, kind: str, filename: str, pdf: bytes) -> str
                 "type": "document",
                 "source": {"type": "base64", "media_type": "application/pdf", "data": data},
             },
-            {"type": "text", "text": PAYSLIP_PROMPT if kind == "payslip" else INPS_PROMPT},
+            {"type": "text", "text": prompt},
         ]
-        schema = payroll.PAYSLIP_SCHEMA if kind == "payslip" else payroll.INPS_SCHEMA
         parsed, meta = await _ask(
             hass, system=READ_SYSTEM, content=content, schema=schema, effort="medium"
         )
@@ -303,6 +416,14 @@ def start_read(hass: HomeAssistant, kind: str, filename: str, pdf: bytes) -> str
                 parsed
             ]
             state["payslips"] = payroll.sorted_payslips(state["payslips"])
+        elif kind == "card":
+            statement = clean_card_statement(parsed)
+            statement.update(
+                id=uuid.uuid4().hex[:10], file=filename[:120], read_at=read_at, model=meta["model"]
+            )
+            key = statement_key(statement)
+            kept = [c for c in state["card_statements"] if statement_key(c) != key]
+            state["card_statements"] = sorted([*kept, statement], key=lambda c: c["statement_date"])
         else:
             parsed.update(file=filename[:120], read_at=read_at, model=meta["model"])
             state["inps"] = parsed

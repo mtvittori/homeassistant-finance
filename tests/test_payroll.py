@@ -283,3 +283,89 @@ async def test_analysis_adds_the_estimates_and_keeps_the_last(hass, fake_claude)
 def test_analysis_context_size_is_capped(hass) -> None:
     with pytest.raises(advisor.AdvisorError):
         advisor.start_analysis(hass, {"x": "y" * (advisor.MAX_CONTEXT_CHARS + 1)})
+
+
+# ------------------------------------------------------- card statements
+
+
+def _statement(**kw: Any) -> dict[str, Any]:
+    base = {
+        "issuer": "Nexi",
+        "card_last4": "9999",
+        "statement_date": "2026-09-30",
+        "period_from": "2026-09-01",
+        "period_to": "2026-09-30",
+        "total_due": 61.5,
+        "debit_date": "2026-10-15",
+        "transactions": [
+            {
+                "date": "2026-09-03",
+                "booking_date": None,
+                "description": "NETFLIX.COM",
+                "merchant": "Netflix",
+                "city": None,
+                "amount": 13.99,
+                "original_currency": None,
+                "original_amount": None,
+            },
+            {
+                "date": "2026-09-12",
+                "booking_date": "2026-09-14",
+                "description": "ESSO ROMA",
+                "merchant": "Esso",
+                "city": "Roma",
+                "amount": 50.0,
+                "original_currency": None,
+                "original_amount": None,
+            },
+            {
+                "date": "2026-09-20",
+                "booking_date": None,
+                "description": "STORNO AMAZON",
+                "merchant": "Amazon",
+                "city": None,
+                "amount": -2.49,
+                "original_currency": None,
+                "original_amount": None,
+            },
+            {
+                "date": "boh",
+                "booking_date": None,
+                "description": "riga rotta",
+                "merchant": None,
+                "city": None,
+                "amount": 1.0,
+                "original_currency": None,
+                "original_amount": None,
+            },
+        ],
+    }
+    base.update(kw)
+    return base
+
+
+def test_card_statement_is_checked_against_its_total() -> None:
+    s = advisor.clean_card_statement(_statement())
+    assert [t["date"] for t in s["transactions"]] == ["2026-09-03", "2026-09-12", "2026-09-20"]
+    assert s["rows_total"] == 61.5 and s["difference"] == 0.0
+    off = advisor.clean_card_statement(_statement(total_due=70.0))
+    assert off["difference"] == 8.5
+    with pytest.raises(advisor.AdvisorError):
+        advisor.clean_card_statement(_statement(statement_date="settembre"))
+
+
+async def test_card_statement_reupload_replaces(hass, fake_claude) -> None:
+    store, calls, answers = fake_claude
+    answers += [
+        _statement(),
+        _statement(total_due=61.5, issuer="Nexi S.p.A."),
+        _statement(statement_date="2026-08-31"),
+    ]
+    for _ in range(3):
+        advisor.start_read(hass, "card", "estratto.pdf", b"%PDF fake")
+        await hass.async_block_till_done()
+    cards = store.data["card_statements"]
+    assert [c["statement_date"] for c in cards] == ["2026-08-31", "2026-09-30"]
+    assert cards[1]["issuer"] == "Nexi S.p.A."
+    assert calls[0]["schema"] is advisor.CARD_SCHEMA
+    assert advisor.jobs_view(hass, "read_card")[0]["state"] == "done"

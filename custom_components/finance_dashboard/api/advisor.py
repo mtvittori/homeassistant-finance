@@ -9,6 +9,9 @@ polls the GET.
 - POST   /payroll                 {kind: payslip|inps, filename, data: base64 PDF} -> job
 - DELETE /payroll/{item_id}       a payslip by id, or "inps"
 - POST   /payroll/profile         profile changes
+- GET    /cards                   credit-card statements read from PDF, read jobs
+- POST   /cards                   {filename, data: base64 PDF} -> job
+- DELETE /cards/{item_id}         one statement
 - GET    /advisor/analysis        Claude availability, last analysis, analysis jobs
 - POST   /advisor/analysis        {context: card aggregates} -> job
 """
@@ -151,6 +154,75 @@ class FinanceDashboardPayrollProfileView(HomeAssistantView):
         state["profile"] = payroll.merge_profile({**state["profile"], **changes})
         await advisor.async_save(hass, state)
         return self.json({"ok": True, "profile": state["profile"]})
+
+
+class FinanceDashboardCardsView(HomeAssistantView):
+    """Credit-card statements read from PDF (for cards PSD2 cannot reach)."""
+
+    url = f"/api/{DOMAIN}/cards"
+    name = f"api:{DOMAIN}:cards"
+    requires_auth = True
+
+    async def get(self, request: web.Request) -> web.Response:
+        if not _admin(request):
+            return _forbidden(self)
+        hass = request.app["hass"]
+        try:
+            state = await advisor.async_load(hass)
+        except advisor.AdvisorError as err:
+            return _error(self, err, 404)
+        return self.json(
+            {
+                "ok": True,
+                "claude": advisor.anthropic_key(hass) is not None,
+                "statements": state["card_statements"],
+                "jobs": advisor.jobs_view(hass, "read_card"),
+            }
+        )
+
+    async def post(self, request: web.Request) -> web.Response:
+        if not _admin(request):
+            return _forbidden(self)
+        hass = request.app["hass"]
+        try:
+            body = await request.json()
+        except ValueError:
+            return self.json({"ok": False, "error": "invalid_json"}, status_code=400)
+        if not isinstance(body, dict):
+            return self.json({"ok": False, "error": "invalid_body"}, status_code=400)
+        if advisor.anthropic_key(hass) is None:
+            return _error(
+                self,
+                advisor.AdvisorError("claude_not_configured", "set up the Anthropic integration"),
+                409,
+            )
+        try:
+            pdf = advisor.decode_pdf(body.get("data"))
+            name = str(body.get("filename") or "estratto.pdf")
+            job = advisor.start_read(hass, "card", name, pdf)
+        except advisor.AdvisorError as err:
+            return _error(self, err)
+        return self.json({"ok": True, "job": job}, status_code=202)
+
+
+class FinanceDashboardCardItemView(HomeAssistantView):
+    """Forget one card statement."""
+
+    url = f"/api/{DOMAIN}/cards/{{item_id}}"
+    name = f"api:{DOMAIN}:card_item"
+    requires_auth = True
+
+    async def delete(self, request: web.Request, item_id: str) -> web.Response:
+        if not _admin(request):
+            return _forbidden(self)
+        hass = request.app["hass"]
+        state = await advisor.async_load(hass)
+        before = len(state["card_statements"])
+        state["card_statements"] = [c for c in state["card_statements"] if c.get("id") != item_id]
+        if len(state["card_statements"]) == before:
+            return self.json({"ok": False, "error": "not_found"}, status_code=404)
+        await advisor.async_save(hass, state)
+        return self.json({"ok": True})
 
 
 class FinanceDashboardAnalysisView(HomeAssistantView):

@@ -18,6 +18,8 @@ from homeassistant.core import HomeAssistant
 from ._helpers import _get_manager, _get_setup_client
 from .advisor import (
     FinanceDashboardAnalysisView,
+    FinanceDashboardCardItemView,
+    FinanceDashboardCardsView,
     FinanceDashboardPayrollItemView,
     FinanceDashboardPayrollProfileView,
     FinanceDashboardPayrollView,
@@ -128,6 +130,8 @@ __all__ = [  # noqa: RUF022  # grouped by category, not alphabetical
     "FinanceDashboardPayrollProfileView",
     "FinanceDashboardPayrollItemView",
     "FinanceDashboardAnalysisView",
+    "FinanceDashboardCardsView",
+    "FinanceDashboardCardItemView",
     # Demo
     "FinanceDashboardDemoToggleView",
     "FinanceDashboardDemoDataView",
@@ -154,6 +158,8 @@ async def async_register_api(hass: HomeAssistant) -> None:
     hass.http.register_view(FinanceDashboardPayrollProfileView())
     hass.http.register_view(FinanceDashboardPayrollItemView())
     hass.http.register_view(FinanceDashboardAnalysisView())
+    hass.http.register_view(FinanceDashboardCardsView())
+    hass.http.register_view(FinanceDashboardCardItemView())
     # Budget plan endpoints (migrated spreadsheet model)
     hass.http.register_view(FinanceDashboardBudgetPlanView())
     hass.http.register_view(FinanceDashboardTransferPlanView())
