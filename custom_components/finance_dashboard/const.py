@@ -4,7 +4,7 @@ DOMAIN = "finance_dashboard"
 PLATFORMS = ["sensor", "number", "select"]
 
 # Version — must match manifest.json and companion config.yaml
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 # Storage keys — all sensitive data stored in HA .storage/
 STORAGE_KEY_CREDENTIALS = f"{DOMAIN}_credentials"

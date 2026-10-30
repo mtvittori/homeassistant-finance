@@ -16,6 +16,12 @@ import logging
 from homeassistant.core import HomeAssistant
 
 from ._helpers import _get_manager, _get_setup_client
+from .advisor import (
+    FinanceDashboardAnalysisView,
+    FinanceDashboardPayrollItemView,
+    FinanceDashboardPayrollProfileView,
+    FinanceDashboardPayrollView,
+)
 from .assignments import FinanceDashboardAssignmentsView
 from .contracts import (
     FinanceDashboardAccountSavingsView,
@@ -117,6 +123,11 @@ __all__ = [  # noqa: RUF022  # grouped by category, not alphabetical
     "FinanceDashboardReprocessView",
     "FinanceDashboardFreshnessView",
     "FinanceDashboardRefreshTriggerView",
+    # Advisor (fork): payslips, estimates, Claude analysis
+    "FinanceDashboardPayrollView",
+    "FinanceDashboardPayrollProfileView",
+    "FinanceDashboardPayrollItemView",
+    "FinanceDashboardAnalysisView",
     # Demo
     "FinanceDashboardDemoToggleView",
     "FinanceDashboardDemoDataView",
@@ -138,6 +149,11 @@ async def async_register_api(hass: HomeAssistant) -> None:
     hass.http.register_view(FinanceDashboardTransferChainsView())
     hass.http.register_view(FinanceDashboardDemoToggleView())
     hass.http.register_view(FinanceDashboardDemoDataView())
+    # Advisor (fork). Profile before the {item_id} route it would otherwise match.
+    hass.http.register_view(FinanceDashboardPayrollView())
+    hass.http.register_view(FinanceDashboardPayrollProfileView())
+    hass.http.register_view(FinanceDashboardPayrollItemView())
+    hass.http.register_view(FinanceDashboardAnalysisView())
     # Budget plan endpoints (migrated spreadsheet model)
     hass.http.register_view(FinanceDashboardBudgetPlanView())
     hass.http.register_view(FinanceDashboardTransferPlanView())

@@ -28,8 +28,13 @@ Ownership resolves in a fixed chain: the account's owner (person or shared) is o
 4. **Session timeout** 30 min; **audit trail** logs event type + timestamp only, never values.
 5. **IBAN masking** (last 4 digits) in API responses; endpoints require HA auth; individual transactions are admin-only.
 6. **No external calls** except the Enable Banking API and the user's opt-in AI categorisation (HA AI functions first; otherwise the user's own API key against exactly one of api.x.ai, api.anthropic.com or api.openai.com, a user-set monthly budget of calls (default 100, hard cap 1000), key Fernet-encrypted, results cached per merchant; payload merchant + remittance text only, never amount, IBAN or date). The one further exception is the user-triggered budget-plan import from a Google Sheets link: only the xlsx export of that sheet id is downloaded from `docs.google.com` (`sheet_source.py`, URL built from the id, never the pasted URL), nothing is sent. No telemetry, no runtime benchmark fetch.
+7. **Fork-only advisor (`advisor.py`, `payroll.py`, `api/advisor.py`)**: one more external destination, api.anthropic.com, with the key of Home Assistant's own Anthropic integration (read from its config entry, never stored here), and only from explicit user actions in the card: reading an uploaded payslip / INPS statement PDF (the PDF is sent, only the extracted numbers are kept, in a Fernet-encrypted Store `finance_dashboard.payroll`; the PDF is never written to disk) and the "Analizza" button (payload = aggregates computed by the card: totals per cycle and category, top merchants, recurring charges, budgets, goals, portfolio positions, plus the payslip estimates — never the transaction list, descriptions or IBAN). Admin-only endpoints, background jobs. Test fixtures use invented payslips only.
 
 **Before every commit, verify:** `git diff --cached` has zero financial data (account numbers, balances, tokens); no `.storage/` files staged; no `credentials.json` / `tokens.json` staged.
+
+## Fork
+
+`mtvittori/homeassistant-finance` diverges from upstream from 1.0.0: no sidebar panel, no auto-loaded cards (the UI is the separate `ha-finance-dashboard` card), plus the advisor above. Italian rules used by `payroll.py` (IRPEF 2026 brackets, D.M. 436/2024 coefficients, 2027/2028 retirement ages, TFR art. 2120 c.c.) are constants at the top of that file with their sources: when a law changes, change the constant and the test that pins it.
 
 ## Versions
 
