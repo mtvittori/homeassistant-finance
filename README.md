@@ -1,5 +1,12 @@
 # Finance Dashboard for Home Assistant
 
+> [!NOTE]
+> **Fork `mtvittori/homeassistant-finance`, staccato da upstream dalla 1.0.0 (30/10/2026).**
+> Base: upstream [JerryT2T/homeassistant-finance](https://github.com/JerryT2T/homeassistant-finance) 0.24.0.
+> Differenza: niente pannello laterale e niente card Lovelace auto-caricate — resta il backend
+> (Enable Banking, sensori, API REST). L'interfaccia è la card separata `ha-finance-dashboard`.
+> Gli aggiornamenti upstream non arrivano più da soli: si portano a mano con `git fetch upstream`.
+
 **Your personal finance command center — right inside Home Assistant.**
 
 > [!WARNING]
